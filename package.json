@@ -1,0 +1,9 @@
+{
+  "name": "railwire-kids",
+  "version": "1.0.0",
+  "description": "Kid-friendly rail and transit news aggregator",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}

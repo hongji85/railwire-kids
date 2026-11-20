@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RailWire Kids – Train News</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#16202a; --muted:#6b7785; --line:#e3e7ec; --accent:#d62839;
+    --mrt:#d62839; --lrt:#2a9d8f; --metro:#3d5a98; --hsr:#e08a00; --intercity:#7b4fa3; --industry:#5b6770; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#10151b; --card:#18202a; --text:#e8edf2; --muted:#93a0ae; --line:#27323e; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  header { background:#111820; color:#fff; padding:20px 16px 14px; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 16px; }
+  header .wrap { padding:0; }
+  h1 { margin:0; font-size:1.6rem; letter-spacing:.5px; } h1 span { color:var(--accent); }
+  .sub { color:#9aa7b4; font-size:.9rem; margin-top:2px; }
+  .controls { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding:12px 0; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  input[type=search], select { padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); font:inherit; }
+  input[type=search] { flex:1; min-width:180px; }
+  .chip { border:1px solid var(--line); background:var(--card); color:var(--text); padding:6px 14px; border-radius:999px; cursor:pointer; font:inherit; font-size:.9rem; }
+  .chip.on { background:var(--text); color:var(--bg); border-color:var(--text); }
+  button.refresh { margin-left:auto; }
+  .meta { color:var(--muted); font-size:.85rem; margin:14px 0 8px; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .card { display:block; background:var(--card); border:1px solid var(--line); border-left:4px solid var(--c,var(--muted)); border-radius:10px; padding:12px 16px; margin-bottom:10px; text-decoration:none; color:inherit; }
+  .card:hover { border-color:var(--c); box-shadow:0 2px 10px rgba(0,0,0,.08); }
+  .card h2 { margin:0 0 4px; font-size:1.05rem; line-height:1.35; }
+  .card p { margin:4px 0 0; color:var(--muted); font-size:.92rem; }
+  .info { font-size:.8rem; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .tag { color:#fff; background:var(--c); border-radius:4px; padding:0 7px; font-size:.72rem; font-weight:600; text-transform:uppercase; }
+  .region { margin:22px 0 10px; font-size:1.1rem; padding-bottom:4px; border-bottom:2px solid var(--accent); }
+  .empty, .err { text-align:center; padding:40px 0; color:var(--muted); }
+  footer { color:var(--muted); font-size:.8rem; padding:20px 0 40px; }
+  details summary { cursor:pointer; }
+  body { font-family:'Comic Sans MS','Chalkboard SE','Trebuchet MS',system-ui,sans-serif; font-size:17px; background:linear-gradient(#e8f6ff,#fff7e6 60%); }
+  @media (prefers-color-scheme: dark) { body { background:#10151b; } }
+  header { background:linear-gradient(90deg,#1e88e5,#43a047,#fbc02d); }
+  .sub { color:#fff; font-size:1rem; }
+  h1 { font-size:2.1rem; }
+  .controls { background:rgba(255,255,255,.85); backdrop-filter:blur(6px); }
+  @media (prefers-color-scheme: dark) { .controls { background:rgba(16,21,27,.9); } }
+  .chip { border-width:2px; padding:8px 16px; font-size:1rem; border-radius:999px; transition:transform .1s; }
+  .chip:hover { transform:scale(1.07); }
+  .chip.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .card { border-radius:18px; border-width:2px; border-left-width:10px; padding:14px 18px; transition:transform .12s; }
+  .card:hover { transform:translateY(-3px) rotate(-.3deg); }
+  .card h2 { font-size:1.2rem; }
+  .tag { font-size:.8rem; padding:1px 10px; border-radius:999px; }
+  .region { font-size:1.5rem; border-bottom:4px dotted var(--accent); }
+  .info { font-size:.88rem; }
+  .modal { position:fixed; inset:0; background:rgba(10,20,30,.6); display:flex; align-items:center; justify-content:center; padding:16px; z-index:20; }
+  .modal[hidden] { display:none; }
+  .sheet { position:relative; background:var(--card); color:var(--text); border-radius:24px; max-width:620px; width:100%; max-height:90vh; overflow:auto; padding:24px; box-shadow:0 10px 40px rgba(0,0,0,.4); animation:pop .15s ease-out; }
+  @keyframes pop { from { transform:scale(.92); opacity:0; } }
+  .sheet h2 { margin:10px 0 6px; font-size:1.4rem; line-height:1.3; }
+  .sheet img { width:100%; max-height:260px; object-fit:cover; border-radius:14px; margin:12px 0 0; }
+  .sheet p { font-size:1.05rem; line-height:1.6; margin:14px 0; color:var(--text); }
+  .close { position:absolute; top:12px; right:12px; width:38px; height:38px; border-radius:50%; border:0; background:var(--line); color:var(--text); font-size:1.1rem; cursor:pointer; }
+  .close:hover { background:var(--accent); color:#fff; }
+  .readbtn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; padding:10px 20px; border-radius:999px; font-weight:700; }
+  .readbtn:hover { filter:brightness(1.1); }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>🚆 Rail<span>Wire</span> Kids</h1>
+  <div class="sub">Fun, friendly news about trains, MRT, LRT, MTR and bullet trains from around the world! 🌏</div>
+</div></header>
+
+<div class="controls"><div class="wrap">
+  <div class="row" id="cats"></div>
+  <div class="row" style="margin-top:8px">
+    <input type="search" id="q" placeholder="🔍 Search for trains, stations, places…">
+    <select id="region"><option value="">🌍 All places</option></select>
+    <select id="age">
+      <option value="0">Any time</option><option value="1">Last 24h</option>
+      <option value="3">Last 3 days</option><option value="7">Last 7 days</option>
+    </select>
+    <button class="chip refresh" id="refresh">↻ Refresh</button>
+  </div>
+</div></div>
+
+<main class="wrap">
+  <div class="meta"><span id="count"></span><span id="updated"></span></div>
+  <div id="list"><div class="empty">Loading news…</div></div>
+  <footer>
+    <details><summary>Feed status</summary><div id="status"></div></details>
+    <p>Stories are checked to leave out scary or grown-up topics, but links go to other websites, so ask a grown-up if unsure. Aggregated from Google News searches and rail trade press; refreshed every 10 minutes.</p>
+  </footer>
+</main>
+
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <div class="sheet">
+    <button id="m-close" class="close" aria-label="Close">✕</button>
+    <span id="m-tag" class="tag" style="--c:var(--accent)"></span>
+    <h2 id="m-title"></h2>
+    <div id="m-info" class="info"></div>
+    <img id="m-img" alt="" hidden>
+    <p id="m-body"></p>
+    <a id="m-read" class="readbtn" target="_blank" rel="noopener noreferrer" hidden></a>
+  </div>
+</div>
+
+<script>
+const CATS = { all:['🚆 All',null], mrt:['🚇 MRT','--mrt'], lrt:['🚈 LRT','--lrt'], metro:['🚉 Metro / MTR','--metro'], hsr:['🚄 Bullet Trains','--hsr'], intercity:['🚂 Long Journeys','--intercity'], industry:['🛠️ New Tech','--industry'] };
+const FLAG = { Malaysia:'🇲🇾', Singapore:'🇸🇬', 'Southeast Asia':'🌴', 'Hong Kong':'🇭🇰', Asia:'🌏', Europe:'🏰', Global:'🌍' };
+const REGION_ORDER = ["Malaysia","Singapore","Southeast Asia","Hong Kong","Asia","Europe","Global"];
+const rank = r => { const i = REGION_ORDER.indexOf(r); return i < 0 ? 99 : i; };
+let items = [], cat = 'all';
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('cats').innerHTML = Object.entries(CATS).map(([k,[l]]) => `<button class="chip${k==='all'?' on':''}" data-k="${k}">${l}</button>`).join('');
+$('cats').onclick = e => { const k = e.target.dataset.k; if (!k) return; cat = k;
+  document.querySelectorAll('#cats .chip').forEach(b => b.classList.toggle('on', b.dataset.k === k)); render(); };
+['q','region','age'].forEach(id => $(id).addEventListener('input', render));
+$('refresh').onclick = () => load(true);
+
+function ago(d) {
+  const m = (Date.now() - new Date(d)) / 60000;
+  if (m < 60) return Math.max(1, Math.round(m)) + 'm ago';
+  if (m < 1440) return Math.round(m / 60) + 'h ago';
+  return Math.round(m / 1440) + 'd ago';
+}
+
+function render() {
+  const q = $('q').value.toLowerCase().trim(), region = $('region').value, age = +$('age').value;
+  const cutoff = age ? Date.now() - age * 864e5 : 0;
+  const rows = items.filter(i => (cat === 'all' || i.cat === cat) && (!region || i.region === region) &&
+    (!q || (i.title + ' ' + i.summary + ' ' + i.source).toLowerCase().includes(q)) && new Date(i.date) >= cutoff);
+  rows.sort((a, b) => rank(a.region) - rank(b.region) || b.date.localeCompare(a.date));
+  $('count').textContent = rows.length + ' stories to read 📰';
+  let last = null;
+  $('list').innerHTML = rows.length ? rows.map(i => (i.region !== last ? (last = i.region, `<h3 class="region">${FLAG[last] || '📍'} ${esc(last)}</h3>`) : '') + `
+    <a class="card" href="#" data-link="${esc(i.link)}" style="--c:var(${CATS[i.cat][1]})">
+      <h2>${esc(i.title)}</h2>
+      <div class="info"><span class="tag">${CATS[i.cat][0]}</span><strong>${esc(i.source)}</strong><span>${esc(i.region)}</span><span title="${new Date(i.date).toLocaleString()}">${ago(i.date)}</span></div>
+      ${i.summary ? `<p>${esc(i.summary)}</p>` : ''}
+    </a>`).join('') : '<div class="empty">No stories match your filters.</div>';
+}
+
+// ---- Story popup ----
+const modal = $('modal');
+function closeModal() { modal.hidden = true; document.body.style.overflow = ''; }
+$('list').addEventListener('click', async e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  e.preventDefault();
+  const it = items.find(i => i.link === card.dataset.link); if (!it) return;
+  $('m-tag').textContent = CATS[it.cat][0];
+  $('m-title').textContent = it.title;
+  $('m-info').textContent = `${it.source} · ${it.region} · ${ago(it.date)}`;
+  $('m-img').hidden = true;
+  $('m-body').textContent = '📖 Reading the story for you…';
+  $('m-read').hidden = true;
+  modal.hidden = false; document.body.style.overflow = 'hidden';
+  let s = { summary: it.summary, image: '', url: it.link };
+  try { const r = await fetch('/api/summary?url=' + encodeURIComponent(it.link)); const d = await r.json(); if (d.summary || d.image) s = d; else s.url = d.url || it.link; } catch {}
+  if (modal.hidden || $('m-title').textContent !== it.title) return; // closed or switched
+  $('m-body').textContent = s.summary || "Sorry, we couldn't get a short summary for this one. You can read the full story on the publisher's website.";
+  if (s.image) { $('m-img').src = s.image; $('m-img').hidden = false; $('m-img').onerror = () => { $('m-img').hidden = true; }; }
+  $('m-read').href = s.url || it.link; $('m-read').textContent = 'Read full story on ' + it.source + ' ↗'; $('m-read').hidden = false;
+});
+modal.addEventListener('click', e => { if (e.target === modal || e.target.id === 'm-close') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+async function load(force) {
+  $('refresh').disabled = true; $('refresh').textContent = '↻ Loading…';
+  try {
+    const r = await fetch('/api/news' + (force ? '?force=1' : ''));
+    const d = await r.json();
+    items = d.items;
+    const regions = [...new Set(items.map(i => i.region))].sort((a, b) => rank(a) - rank(b));
+    const cur = $('region').value;
+    $('region').innerHTML = '<option value="">🌍 All places</option>' + regions.map(r => `<option${r===cur?' selected':''}>${esc(r)}</option>`).join('');
+    $('updated').textContent = 'Updated ' + new Date(d.updated).toLocaleTimeString();
+    $('status').innerHTML = d.status.map(s => `<div>${s.ok ? '✅' : '❌'} ${esc(s.feed)} — ${s.ok ? s.count + ' items' : esc(s.error)}</div>`).join('');
+    render();
+  } catch (e) { $('list').innerHTML = '<div class="err">Could not load news. Is the server running?</div>'; }
+  $('refresh').disabled = false; $('refresh').textContent = '↻ Refresh';
+}
+load();
+setInterval(() => load(), 10 * 60 * 1000);
+</script>
+</body>
+</html>
