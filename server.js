@@ -28,19 +28,25 @@ const FEEDS = [
   { name: 'Bing News', bing: true, cat: 'hsr', region: 'Global', url: bing('high-speed rail', 'US', 'en-US') },
   { name: 'Bing News', bing: true, cat: 'metro', region: 'Global', url: bing('metro subway new line opening', 'US', 'en-US') },
   { name: 'Bing News', bing: true, cat: 'intercity', region: 'Global', url: bing('passenger trains railway news', 'US', 'en-US') },
+{ name: 'Bing News', bing: true, cat: 'mrt', region: 'Singapore', url: bing('Thomson-East Coast Line OR Cross Island Line OR Downtown Line MRT') },
+  { name: 'Bing News', bing: true, cat: 'mrt', region: 'Singapore', url: bing('SMRT OR SBS Transit OR LTA rail') },
+  { name: 'Bing News', bing: true, cat: 'lrt', region: 'Singapore', url: bing('Jurong Region Line OR Bukit Panjang LRT') },
+  { name: 'Bing News', bing: true, cat: 'mrt', region: 'Malaysia', url: bing('MRT Putrajaya Line OR MRT3 Circle Line Malaysia', 'MY', 'en-MY') },
+  { name: 'Bing News', bing: true, cat: 'lrt', region: 'Malaysia', url: bing('Kelana Jaya LRT OR Ampang LRT OR Rapid Rail', 'MY', 'en-MY') },
+  { name: 'Bing News', bing: true, cat: 'intercity', region: 'Malaysia', url: bing('East Coast Rail Link OR ECRL OR KTMB', 'MY', 'en-MY') },
+  { name: 'Bing News', bing: true, cat: 'intercity', region: 'Malaysia', url: bing('Penang LRT OR Johor RTS Link OR Sarawak ART tram', 'MY', 'en-MY') },
+  { name: 'Bing News', bing: true, cat: 'hsr', region: 'Southeast Asia', url: bing('Jakarta Bandung Whoosh OR Vietnam high-speed railway OR Thailand high-speed rail') },
+  { name: 'Bing News', bing: true, cat: 'metro', region: 'Southeast Asia', url: bing('Bangkok MRT OR Jakarta MRT OR Manila metro OR Ho Chi Minh metro') },
+  { name: 'Bing News', bing: true, cat: 'metro', region: 'Hong Kong', url: bing('MTR Corporation line extension OR Tung Chung Line OR Tuen Ma Line', 'HK', 'en-HK') },
+  { name: 'Bing News', bing: true, cat: 'hsr', region: 'Asia', url: bing('Japan Shinkansen new train', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'hsr', region: 'Asia', url: bing('China high-speed railway Fuxing', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'metro', region: 'Asia', url: bing('Tokyo metro OR Seoul subway OR Delhi Metro OR Mumbai metro', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'intercity', region: 'Europe', url: bing('Deutsche Bahn OR SNCF OR Network Rail OR Trenitalia', 'GB', 'en-GB') },
+  { name: 'Bing News', bing: true, cat: 'metro', region: 'Europe', url: bing('London Underground OR Paris metro OR Elizabeth line', 'GB', 'en-GB') },
+  { name: 'Bing News', bing: true, cat: 'intercity', region: 'Global', url: bing('Amtrak OR Brightline OR Via Rail new trains', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'industry', region: 'Global', url: bing('train manufacturer new trains Alstom OR Siemens Mobility OR Hitachi Rail OR CRRC', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'metro', region: 'Global', url: bing('light rail OR tram new line opens', 'US', 'en-US') },
   // Targeted searches (Google News)
-  { name: 'Google News', cat: 'mrt', region: 'Singapore', url: gnews('Singapore MRT') },
-  { name: 'Google News', cat: 'mrt', region: 'Malaysia', url: gnews('MRT Malaysia Klang Valley', 'en-MY', 'MY', 'MY:en') },
-  { name: 'Google News', cat: 'lrt', region: 'Singapore', url: gnews('Singapore LRT Sengkang Punggol') },
-  { name: 'Google News', cat: 'lrt', region: 'Malaysia', url: gnews('LRT Malaysia Rapid KL', 'en-MY', 'MY', 'MY:en') },
-  { name: 'Google News', cat: 'metro', region: 'Hong Kong', url: gnews('MTR Hong Kong', 'en-HK', 'HK', 'HK:en') },
-  { name: 'Google News', cat: 'hsr', region: 'Southeast Asia', url: gnews('Kuala Lumpur Singapore high speed rail') },
-  { name: 'Google News', cat: 'hsr', region: 'Global', url: gnews('high-speed rail', 'en-US', 'US', 'US:en') },
-  { name: 'Google News', cat: 'hsr', region: 'Asia', url: gnews('Shinkansen OR "China high-speed railway" OR Whoosh OR KTX') },
-  { name: 'Google News', cat: 'hsr', region: 'Europe', url: gnews('TGV OR ICE OR Eurostar OR "high-speed train" Europe', 'en-GB', 'GB', 'GB:en') },
-  { name: 'Google News', cat: 'metro', region: 'Global', url: gnews('metro subway opening OR delay OR extension', 'en-US', 'US', 'US:en') },
-  { name: 'Google News', cat: 'intercity', region: 'Malaysia', url: gnews('KTM ETS Malaysia train', 'en-MY', 'MY', 'MY:en') },
-  { name: 'Google News', cat: 'intercity', region: 'Global', url: gnews('passenger rail Amtrak OR "Network Rail" OR "Deutsche Bahn" OR "Indian Railways"', 'en-US', 'US', 'US:en') },
   // Trade press
   { name: 'Railway Gazette', cat: 'industry', region: 'Global', url: 'https://www.railwaygazette.com/rss' },
   { name: 'Railway Technology', cat: 'industry', region: 'Global', url: 'https://www.railway-technology.com/feed/' },
@@ -129,7 +135,9 @@ async function refresh() {
     seen.set(it.link, out.length); seen.set(key, out.length);
     out.push(it);
   }
-  cache = { at: Date.now(), data: out, status };
+  // every story must have a real summary so the popup always has something to show
+  const withSummary = out.filter(i => i.summary && i.summary.length > 40);
+  cache = { at: Date.now(), data: withSummary, status };
 }
 
 async function getNews() {
