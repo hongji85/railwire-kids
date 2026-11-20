@@ -9,8 +9,25 @@ const TTL = 10 * 60 * 1000;
 const gnews = (q, region = 'en-SG', gl = 'SG', ceid = 'SG:en') =>
   `https://news.google.com/rss/search?q=${encodeURIComponent(q + ' when:14d')}&hl=${region}&gl=${gl}&ceid=${ceid}`;
 
+// Bing News RSS: gives the real article URL, a description and an image (works well from cloud hosts)
+const bing = (q, cc = 'SG', lang = 'en-SG') =>
+  `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss&setlang=${lang}&cc=${cc}`;
+
 // category: mrt | lrt | hsr | metro | intercity | industry
 const FEEDS = [
+  // Bing (with summaries + images)
+  { name: 'Bing News', bing: true, cat: 'mrt', region: 'Singapore', url: bing('Singapore MRT') },
+  { name: 'Bing News', bing: true, cat: 'lrt', region: 'Singapore', url: bing('Singapore LRT Sengkang Punggol') },
+  { name: 'Bing News', bing: true, cat: 'mrt', region: 'Malaysia', url: bing('MRT Malaysia Klang Valley', 'MY', 'en-MY') },
+  { name: 'Bing News', bing: true, cat: 'lrt', region: 'Malaysia', url: bing('LRT Rapid KL', 'MY', 'en-MY') },
+  { name: 'Bing News', bing: true, cat: 'intercity', region: 'Malaysia', url: bing('KTM ETS train Malaysia', 'MY', 'en-MY') },
+  { name: 'Bing News', bing: true, cat: 'hsr', region: 'Southeast Asia', url: bing('Kuala Lumpur Singapore high speed rail') },
+  { name: 'Bing News', bing: true, cat: 'metro', region: 'Hong Kong', url: bing('MTR Hong Kong', 'HK', 'en-HK') },
+  { name: 'Bing News', bing: true, cat: 'hsr', region: 'Asia', url: bing('Shinkansen OR China high-speed railway OR KTX', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'hsr', region: 'Europe', url: bing('TGV OR Eurostar OR high-speed train Europe', 'GB', 'en-GB') },
+  { name: 'Bing News', bing: true, cat: 'hsr', region: 'Global', url: bing('high-speed rail', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'metro', region: 'Global', url: bing('metro subway new line opening', 'US', 'en-US') },
+  { name: 'Bing News', bing: true, cat: 'intercity', region: 'Global', url: bing('passenger trains railway news', 'US', 'en-US') },
   // Targeted searches (Google News)
   { name: 'Google News', cat: 'mrt', region: 'Singapore', url: gnews('Singapore MRT') },
   { name: 'Google News', cat: 'mrt', region: 'Malaysia', url: gnews('MRT Malaysia Klang Valley', 'en-MY', 'MY', 'MY:en') },
@@ -58,8 +75,17 @@ function parse(xml, feed) {
       if (i > 0) { source = title.slice(i + 3); title = title.slice(0, i); }
       desc = ''; // description is just a link list
     }
+    let image = '';
+    if (feed.bing) {
+      const u = (link.match(/[?&]url=([^&]+)/) || [])[1];
+      if (u) { try { link = decodeURIComponent(u); } catch {} }
+      source = strip(tag(block, 'News:Source')) || source;
+      image = strip(tag(block, 'News:Image'));
+      if (image.startsWith('//')) image = 'https:' + image;
+      image = image.replace(/^http:/, 'https:');
+    }
     if (!title || !link || isNaN(date)) continue;
-    items.push({ title, link, source, cat: feed.cat, region: feed.region, date: date.toISOString(), summary: desc.slice(0, 280) });
+    items.push({ title, link, source, cat: feed.cat, region: feed.region, date: date.toISOString(), summary: desc.slice(0, desc.length > 600 ? 600 : desc.length), image });
   }
   return items;
 }
@@ -89,13 +115,18 @@ async function refresh() {
     }
   }));
   // dedupe by link, then by normalised title
-  const seen = new Set();
+  const seen = new Map();
   const out = [];
   for (const it of results.flat().sort((a, b) => b.date.localeCompare(a.date))) {
     const key = it.title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 60);
-    if (seen.has(it.link) || seen.has(key)) continue;
     if (!RAIL.test(it.title + ' ' + it.summary) || BAD.test(it.title + ' ' + it.summary)) continue;
-    seen.add(it.link); seen.add(key);
+    const prev = seen.get(it.link) ?? seen.get(key);
+    if (prev !== undefined) {
+      // same story from two feeds: keep the one that has a summary
+      if (!out[prev].summary && it.summary) out[prev] = { ...it, date: out[prev].date > it.date ? out[prev].date : it.date };
+      continue;
+    }
+    seen.set(it.link, out.length); seen.set(key, out.length);
     out.push(it);
   }
   cache = { at: Date.now(), data: out, status };
@@ -174,7 +205,10 @@ http.createServer(async (req, res) => {
     const link = url.searchParams.get('url') || '';
     res.writeHead(200, { 'Content-Type': 'application/json' });
     // only summarise links we served ourselves (avoids being used as an open proxy)
-    if (!cache.data || !cache.data.some(i => i.link === link)) return res.end('{}');
+    const known = cache.data && cache.data.find(i => i.link === link);
+    if (!known) return res.end('{}');
+    // feed already gave us a decent kid-safe summary: no need to fetch the article
+    if (known.summary && known.summary.length > 60) return res.end(JSON.stringify({ summary: kidSafe(known.summary), image: known.image || '', url: link }));
     return res.end(JSON.stringify(await summarise(link).catch(() => ({ summary: '', image: '', url: link }))));
   }
   const file = path.join(__dirname, 'public', url.pathname === '/' ? 'index.html' : path.normalize(url.pathname).replace(/^(\.\.[\\/])+/, ''));

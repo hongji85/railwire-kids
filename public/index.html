@@ -154,7 +154,7 @@ $('list').addEventListener('click', async e => {
   $('m-body').textContent = '📖 Reading the story for you…';
   $('m-read').hidden = true;
   modal.hidden = false; document.body.style.overflow = 'hidden';
-  let s = { summary: it.summary, image: '', url: it.link };
+  let s = { summary: it.summary, image: it.image || '', url: it.link };
   try { const r = await fetch('/api/summary?url=' + encodeURIComponent(it.link)); const d = await r.json(); if (d.summary || d.image) s = d; else s.url = d.url || it.link; } catch {}
   if (modal.hidden || $('m-title').textContent !== it.title) return; // closed or switched
   $('m-body').textContent = s.summary || "Sorry, we couldn't get a short summary for this one. You can read the full story on the publisher's website.";
