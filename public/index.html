@@ -69,8 +69,7 @@
 </div></header>
 
 <div class="controls"><div class="wrap">
-  <div class="row" id="cats"></div>
-  <div class="row" style="margin-top:8px">
+  <div class="row">
     <input type="search" id="q" placeholder="🔍 Search for trains, stations, places…">
     <select id="region"><option value="">🌍 All places</option></select>
     <select id="age">
@@ -111,9 +110,6 @@ let items = [], cat = 'all';
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-$('cats').innerHTML = Object.entries(CATS).map(([k,[l]]) => `<button class="chip${k==='all'?' on':''}" data-k="${k}">${l}</button>`).join('');
-$('cats').onclick = e => { const k = e.target.dataset.k; if (!k) return; cat = k;
-  document.querySelectorAll('#cats .chip').forEach(b => b.classList.toggle('on', b.dataset.k === k)); render(); };
 ['q','region','age'].forEach(id => $(id).addEventListener('input', render));
 $('refresh').onclick = () => load(true);
 
